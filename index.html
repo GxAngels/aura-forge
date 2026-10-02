@@ -1,967 +1,1000 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura Forge</title>
-    <style>
-        :root {
-            --bg-color: #0b0d17;
-            --panel-bg: rgba(22, 27, 46, 0.8);
-            --border-color: rgba(255, 255, 255, 0.1);
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --accent: #8b5cf6;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            user-select: none;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            background-image: radial-gradient(circle at 50% 20%, rgba(139, 92, 246, 0.15), transparent 60%);
-        }
-
-        header {
-            width: 100%;
-            max-width: 900px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            background: var(--panel-bg);
-            padding: 15px 25px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            backdrop-filter: blur(10px);
-        }
-
-        h1 {
-            font-size: 1.5rem;
-            letter-spacing: 2px;
-            background: linear-gradient(45deg, #a78bfa, #f472b6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .auth-container {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .auth-btn, .action-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 600;
-        }
-
-        .auth-btn:hover, .action-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .main-container {
-            width: 100%;
-            max-width: 900px;
-            display: grid;
-            grid-template-columns: 1fr 320px;
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .main-container {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .forge-section {
-            background: var(--panel-bg);
-            border-radius: 12px;
-            padding: 30px;
-            border: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 400px;
-            text-align: center;
-            backdrop-filter: blur(10px);
-            position: relative;
-        }
-
-        .display-rarity {
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            color: var(--text-muted);
-            margin-bottom: 10px;
-        }
-
-        .aura-name {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 10px;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.1s;
-        }
-
-        .aura-chance {
-            font-size: 1.1rem;
-            color: var(--text-muted);
-            margin-bottom: 30px;
-        }
-
-        .controls {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .roll-btn {
-            background: linear-gradient(135deg, #7c3aed, #c084fc);
-            border: none;
-            color: white;
-            padding: 14px 32px;
-            border-radius: 10px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
-            transition: transform 0.1s, box-shadow 0.2s;
-        }
-
-        .roll-btn:active {
-            transform: scale(0.96);
-        }
-
-        .roll-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-
-        .auto-btn, .fast-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 14px 16px;
-            border-radius: 10px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
-        }
-
-        .auto-btn.active {
-            background: #ef4444;
-            border-color: #f87171;
-            box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
-        }
-
-        .fast-btn.active {
-            background: #eab308;
-            border-color: #fde047;
-            color: #000;
-            box-shadow: 0 0 10px rgba(234, 179, 8, 0.4);
-        }
-
-        .auto-btn:disabled, .fast-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            border-color: transparent;
-        }
-
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .panel {
-            background: var(--panel-bg);
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid var(--border-color);
-            backdrop-filter: blur(10px);
-        }
-
-        .panel-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        .tab-btn.active {
-            background: var(--accent);
-            color: white;
-            border-color: var(--accent);
-        }
-
-        .tab-content {
-            display: none;
-            max-height: 280px;
-            overflow-y: auto;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        .history-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
-        .history-item {
-            font-size: 0.85rem;
-            padding: 6px 10px;
-            border-radius: 6px;
-            background: rgba(0, 0, 0, 0.2);
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .grid-list {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-        }
-
-        .card-item {
-            background: rgba(0,0,0,0.2);
-            border: 1px solid var(--border-color);
-            padding: 8px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .card-top {
-            display: flex;
-            justify-content: space-between;
-            font-weight: bold;
-        }
-
-        .card-count {
-            color: var(--accent);
-        }
-
-        .card-sub {
-            color: var(--text-muted);
-            font-size: 0.7rem;
-            margin-top: 4px;
-        }
-
-        .craft-btn, .equip-btn {
-            margin-top: 6px;
-            width: 100%;
-            padding: 4px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            font-weight: bold;
-            background: var(--accent);
-            color: white;
-        }
-
-        .craft-btn:disabled {
-            background: #4b5563;
-            cursor: not-allowed;
-        }
-
-        .equip-btn.equipped {
-            background: #10b981;
-        }
-
-        /* RARITY COLORS */
-        .rarity-common { color: #9ca3af; }
-        .rarity-uncommon { color: #22c55e; }
-        .rarity-rare { color: #3b82f6; }
-        .rarity-epic { color: #a855f7; }
-        .rarity-mythic { color: #ec4899; }
-        .rarity-cosmic { color: #06b6d4; text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
-        .rarity-transcendent { color: #f59e0b; text-shadow: 0 0 12px rgba(245, 158, 11, 0.7); }
-
-        /* MODAL */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
-        }
-
-        .modal.active { display: flex; }
-
-        .modal-content {
-            background: #161b2e;
-            padding: 25px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
-            width: 300px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .modal-content input {
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            background: rgba(0, 0, 0, 0.3);
-            color: white;
-        }
-
-        .user-tag {
-            font-size: 0.9rem;
-            color: #a78bfa;
-            font-weight: bold;
-        }
-
-        .pop {
-            animation: popAnim 0.15s ease-out;
-        }
-
-        @keyframes popAnim {
-            0% { transform: scale(0.8); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-    </style>
-</head>
-<body>
-
-    <header>
-        <h1>AURA FORGE</h1>
-        <div class="auth-container" id="authSection"></div>
-    </header>
-
-    <div class="main-container">
-        <div class="forge-section">
-            <div class="display-rarity" id="auraRarity">READY TO FORGE</div>
-            <div class="aura-name rarity-common" id="auraDisplay">None</div>
-            <div class="aura-chance" id="auraChance">1 / 1</div>
-
-            <div class="controls">
-                <button class="roll-btn" id="rollBtn">FORGE</button>
-                <button class="auto-btn" id="autoBtn" disabled title="Unlocks at 25 rolls">AUTO (25 Rolls)</button>
-                <button class="fast-btn" id="fastBtn" disabled title="Unlocks at 125 rolls">FAST ROLL (125 Rolls)</button>
-            </div>
-        </div>
-
-        <div class="sidebar">
-            <div class="panel">
-                <div class="panel-title">
-                    <span>Collection</span>
-                    <span id="totalRolls" style="color: var(--text-muted); font-size: 0.85rem;">Rolls: 0</span>
-                </div>
-                
-                <div class="tabs">
-                    <button class="tab-btn active" onclick="switchTab('inventory')">Inventory</button>
-                    <button class="tab-btn" onclick="switchTab('crafting')">Crafting</button>
-                </div>
-
-                <div id="inventoryTab" class="tab-content active grid-list"></div>
-                <div id="craftingTab" class="tab-content grid-list"></div>
-            </div>
-
-            <div class="panel">
-                <div class="panel-title">History</div>
-                <div class="history-list" id="historyList"></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal" id="authModal">
-        <div class="modal-content">
-            <h3 id="modalTitle" style="text-align: center;">Login</h3>
-            <input type="text" id="usernameInput" placeholder="Username">
-            <input type="password" id="passwordInput" placeholder="Password">
-            <button class="action-btn" onclick="submitAuth()">Confirm</button>
-            <button class="action-btn" onclick="closeAuthModal()" style="background: transparent;">Cancel</button>
-        </div>
-    </div>
-
-    <script>
-        const auras = [
-            { name: "Spark", chance: 2, class: "rarity-common" },
-            { name: "Mist", chance: 4, class: "rarity-common" },
-            { name: "Dewdrop", chance: 8, class: "rarity-uncommon" },
-            { name: "Breeze", chance: 15, class: "rarity-uncommon" },
-            { name: "Verdant", chance: 20, class: "rarity-uncommon" },
-            { name: "Ember", chance: 30, class: "rarity-uncommon" },
-            { name: "Glowworm", chance: 50, class: "rarity-rare" },
-            { name: "Glacier", chance: 150, class: "rarity-rare" },
-            { name: "Zephyr", chance: 250, class: "rarity-rare" },
-            { name: "Quartz", chance: 400, class: "rarity-epic" },
-            { name: "Thunderstorm", chance: 650, class: "rarity-epic" },
-            { name: "Aether", chance: 1000, class: "rarity-epic" },
-            { name: "Volt", chance: 1500, class: "rarity-epic" },
-            { name: "Phantom", chance: 2200, class: "rarity-epic" },
-            { name: "Solaris", chance: 3500, class: "rarity-mythic" },
-            { name: "Lunaris", chance: 3500, class: "rarity-mythic" },
-            { name: "Abyssal Pulse", chance: 5000, class: "rarity-mythic" },
-            { name: "Astral Weave", chance: 8000, class: "rarity-mythic" },
-            { name: "Vortex", chance: 12000, class: "rarity-mythic" },
-            { name: "Supernova", chance: 20000, class: "rarity-mythic" },
-            { name: "Nebula", chance: 35000, class: "rarity-cosmic" },
-            { name: "Eclipse", chance: 50000, class: "rarity-cosmic" },
-            { name: "Chronos", chance: 75000, class: "rarity-cosmic" },
-            { name: "Void Prism", chance: 120000, class: "rarity-cosmic" },
-            { name: "Singularity", chance: 200000, class: "rarity-cosmic" },
-            { name: "Celestial Crest", chance: 350000, class: "rarity-cosmic" },
-            { name: "Hyperdrive", chance: 500000, class: "rarity-cosmic" },
-            { name: "Starlight Monarch", chance: 850000, class: "rarity-cosmic" },
-            { name: "Supercluster", chance: 1200000, class: "rarity-cosmic" },
-            { name: "Valhalla", chance: 2000000, class: "rarity-transcendent" },
-            { name: "Entropy", chance: 3500000, class: "rarity-transcendent" },
-            { name: "Zenith", chance: 5000000, class: "rarity-transcendent" },
-            { name: "Dimension Tear", chance: 8000000, class: "rarity-transcendent" },
-            { name: "Ragnarok", chance: 12000000, class: "rarity-transcendent" },
-            { name: "Cosmic String", chance: 20000000, class: "rarity-transcendent" },
-            { name: "Dark Matter", chance: 35000000, class: "rarity-transcendent" },
-            { name: "Genesis", chance: 50000000, class: "rarity-transcendent" },
-            { name: "Nirvana", chance: 80000000, class: "rarity-transcendent" },
-            { name: "Alpha & Omega", chance: 120000000, class: "rarity-transcendent" },
-            { name: "Big Bang", chance: 200000000, class: "rarity-transcendent" },
-            { name: "Infinity Spire", chance: 350000000, class: "rarity-transcendent" },
-            { name: "Eternal Void", chance: 500000000, class: "rarity-transcendent" },
-            { name: "Event Horizon", chance: 750000000, class: "rarity-transcendent" },
-            { name: "Multiverse Core", chance: 1000000000, class: "rarity-transcendent" },
-            { name: "Time Weaver", chance: 1800000000, class: "rarity-transcendent" },
-            { name: "Astraea", chance: 2500000000, class: "rarity-transcendent" },
-            { name: "Primordial Chaos", chance: 4000000000, class: "rarity-transcendent" },
-            { name: "Cosmic Architect", chance: 6000000000, class: "rarity-transcendent" },
-            { name: "Oblivion Engine", chance: 8000000000, class: "rarity-transcendent" },
-            { name: "Omnipotence", chance: 10000000000, class: "rarity-transcendent" }
-        ];
-
-        const craftables = [
-            { id: "dew_pendant", name: "Dewdrop Pendant", desc: "+5% Luck", cost: { "Dewdrop": 3, "Spark": 5 }, buffType: "luck", value: 1.05 },
-            { id: "breeze_ring", name: "Breeze Ring", desc: "+10% Luck", cost: { "Dewdrop": 2, "Breeze": 3 }, buffType: "luck", value: 1.10 },
-            { id: "catalyst_1", name: "Amber Catalyst", desc: "+15% Luck", cost: { "Glowworm": 2, "Verdant": 2 }, buffType: "luck", value: 1.15 },
-            { id: "catalyst_2", name: "Glacier Shard", desc: "+25% Luck", cost: { "Glacier": 2, "Zephyr": 1 }, buffType: "luck", value: 1.25 },
-            { id: "speed_1", name: "Gale Ring", desc: "Forge Speed +15%", cost: { "Breeze": 5, "Quartz": 1 }, buffType: "speed", value: 0.85 },
-            { id: "speed_2", name: "Lightning Conduit", desc: "Forge Speed +30%", cost: { "Thunderstorm": 2, "Volt": 1 }, buffType: "speed", value: 0.70 },
-            { id: "catalyst_3", name: "Aether Prism", desc: "+45% Luck", cost: { "Aether": 2, "Phantom": 1 }, buffType: "luck", value: 1.45 },
-            { id: "ticks_1", name: "Vortex Compass", desc: "Faster Forge Animation", cost: { "Vortex": 1, "Abyssal Pulse": 2 }, buffType: "ticks", value: 8 },
-            { id: "catalyst_4", name: "Solar-Lunar Orb", desc: "+70% Luck", cost: { "Solaris": 1, "Lunaris": 1 }, buffType: "luck", value: 1.70 },
-            { id: "speed_3", name: "Hyperdrive Core", desc: "Forge Speed +50%", cost: { "Hyperdrive": 1, "Supernova": 2 }, buffType: "speed", value: 0.50 },
-            { id: "catalyst_5", name: "Nebula Heart", desc: "+100% Luck (2x)", cost: { "Nebula": 1, "Eclipse": 1 }, buffType: "luck", value: 2.00 },
-            { id: "ticks_2", name: "Chronos Hourglass", desc: "Instant Forge Animation", cost: { "Chronos": 1, "Singularity": 1 }, buffType: "ticks", value: 4 },
-            { id: "catalyst_6", name: "Void Crown", desc: "+150% Luck (2.5x)", cost: { "Void Prism": 1, "Celestial Crest": 2 }, buffType: "luck", value: 2.50 },
-            { id: "catalyst_7", name: "Starlight Scepter", desc: "+250% Luck (3.5x)", cost: { "Starlight Monarch": 1, "Supercluster": 1 }, buffType: "luck", value: 3.50 },
-            { id: "speed_4", name: "Warp Accelerator", desc: "Ultrastat Auto-Forge", cost: { "Dimension Tear": 1, "Entropy": 1 }, buffType: "speed", value: 0.25 },
-            { id: "catalyst_8", name: "Valhalla Seal", desc: "+400% Luck (5x)", cost: { "Valhalla": 1, "Zenith": 1 }, buffType: "luck", value: 5.00 },
-            { id: "catalyst_9", name: "Entropy Eye", desc: "+650% Luck (7.5x)", cost: { "Ragnarok": 1, "Dark Matter": 1 }, buffType: "luck", value: 7.50 },
-            { id: "catalyst_10", name: "Genesis Core", desc: "+1000% Luck (11x)", cost: { "Genesis": 1, "Cosmic String": 2 }, buffType: "luck", value: 11.00 },
-            { id: "catalyst_11", name: "Nirvana Lotus", desc: "+1600% Luck (17x)", cost: { "Nirvana": 1, "Big Bang": 1 }, buffType: "luck", value: 17.00 },
-            { id: "catalyst_12", name: "Spire of Infinity", desc: "+2500% Luck (26x)", cost: { "Infinity Spire": 1, "Eternal Void": 1 }, buffType: "luck", value: 26.00 },
-            { id: "catalyst_13", name: "Multiverse Matrix", desc: "+4000% Luck (41x)", cost: { "Multiverse Core": 1, "Event Horizon": 1 }, buffType: "luck", value: 41.00 },
-            { id: "catalyst_14", name: "Omni Engine", desc: "+10000% Ultimate Luck (101x)", cost: { "Omnipotence": 1, "Primordial Chaos": 1 }, buffType: "luck", value: 101.00 }
-        ];
-
-        let currentUser = null;
-        let totalRolls = 0;
-        let isRolling = false;
-        let autoRolling = false;
-        let fastRollEnabled = false;
-        let autoInterval = null;
-        let history = [];
-        let inventory = {}; 
-        let craftedItems = {};
-        let equippedItem = null;
-        let currentAuthMode = 'login';
-
-        let globalAudioCtx = null;
-
-        const rollBtn = document.getElementById('rollBtn');
-        const autoBtn = document.getElementById('autoBtn');
-        const fastBtn = document.getElementById('fastBtn');
-        const auraDisplay = document.getElementById('auraDisplay');
-        const auraRarity = document.getElementById('auraRarity');
-        const auraChance = document.getElementById('auraChance');
-        const totalRollsDisplay = document.getElementById('totalRolls');
-        const historyList = document.getElementById('historyList');
-        const inventoryTab = document.getElementById('inventoryTab');
-        const craftingTab = document.getElementById('craftingTab');
-
-        function playSound(freq, type = 'sine', duration = 0.05, vol = 0.08) {
-            try {
-                if (!globalAudioCtx) {
-                    globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (globalAudioCtx.state === 'suspended') {
-                    globalAudioCtx.resume();
-                }
-                const oscillator = globalAudioCtx.createOscillator();
-                const gainNode = globalAudioCtx.createGain();
-
-                oscillator.type = type;
-                oscillator.frequency.setValueAtTime(freq, globalAudioCtx.currentTime);
-                gainNode.gain.setValueAtTime(vol, globalAudioCtx.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.0001, globalAudioCtx.currentTime + duration);
-
-                oscillator.connect(gainNode);
-                gainNode.connect(globalAudioCtx.destination);
-
-                oscillator.start();
-                oscillator.stop(globalAudioCtx.currentTime + duration);
-            } catch (e) {}
-        }
-
-        function updateUnlocks() {
-            if (totalRolls >= 25) {
-                autoBtn.disabled = false;
-                autoBtn.title = "Toggle Auto Roll";
-                if (!autoRolling) autoBtn.textContent = "AUTO: OFF";
-            } else {
-                autoBtn.disabled = true;
-                autoBtn.textContent = `AUTO (${25 - totalRolls} left)`;
-            }
-
-            if (totalRolls >= 125) {
-                fastBtn.disabled = false;
-                fastBtn.title = "Toggle Fast Roll";
-                if (!fastRollEnabled) fastBtn.textContent = "FAST: OFF";
-            } else {
-                fastBtn.disabled = true;
-                fastBtn.textContent = `FAST (${125 - totalRolls} left)`;
-            }
-        }
-
-        function initUserSystem() {
-            const activeUser = localStorage.getItem('aura_forge_user');
-            if (activeUser) {
-                currentUser = activeUser;
-                loadUserData(currentUser);
-            }
-            renderAuthUI();
-            updateUnlocks();
-        }
-
-        function renderAuthUI() {
-            const authSection = document.getElementById('authSection');
-            if (currentUser) {
-                authSection.innerHTML = `
-                    <span class="user-tag">👤 ${currentUser}</span>
-                    <button class="auth-btn" onclick="logout()">LOGOUT</button>
-                `;
-            } else {
-                authSection.innerHTML = `
-                    <button class="auth-btn" onclick="openAuthModal('login')">LOGIN</button>
-                    <button class="auth-btn" onclick="openAuthModal('register')">REGISTER</button>
-                `;
-            }
-        }
-
-        function openAuthModal(mode) {
-            currentAuthMode = mode;
-            document.getElementById('modalTitle').textContent = mode === 'login' ? 'Login Account' : 'Register Account';
-            document.getElementById('usernameInput').value = '';
-            document.getElementById('passwordInput').value = '';
-            document.getElementById('authModal').classList.add('active');
-        }
-
-        function closeAuthModal() {
-            document.getElementById('authModal').classList.remove('active');
-        }
-
-        function submitAuth() {
-            const user = document.getElementById('usernameInput').value.trim();
-            const pass = document.getElementById('passwordInput').value.trim();
-
-            if (!user || !pass) {
-                alert("Please fill in both fields!");
-                return;
-            }
-
-            const accounts = JSON.parse(localStorage.getItem('aura_forge_accounts') || '{}');
-
-            if (currentAuthMode === 'register') {
-                if (accounts[user]) {
-                    alert("Username already exists!");
-                    return;
-                }
-                accounts[user] = { password: pass, data: { totalRolls: 0, inventory: {}, craftedItems: {}, equippedItem: null } };
-                localStorage.setItem('aura_forge_accounts', JSON.stringify(accounts));
-                alert("Registered successfully!");
-                currentUser = user;
-            } else {
-                if (!accounts[user] || accounts[user].password !== pass) {
-                    alert("Invalid credentials!");
-                    return;
-                }
-                currentUser = user;
-            }
-
-            localStorage.setItem('aura_forge_user', currentUser);
-            loadUserData(currentUser);
-            renderAuthUI();
-            closeAuthModal();
-        }
-
-        function logout() {
-            saveUserData();
-            currentUser = null;
-            localStorage.removeItem('aura_forge_user');
-            totalRolls = 0;
-            inventory = {};
-            craftedItems = {};
-            equippedItem = null;
-            history = [];
-            
-            totalRollsDisplay.textContent = `Rolls: 0`;
-            renderHistory();
-            renderInventory();
-            renderCrafting();
-            renderAuthUI();
-            updateUnlocks();
-        }
-
-        function saveUserData() {
-            if (!currentUser) return;
-            const accounts = JSON.parse(localStorage.getItem('aura_forge_accounts') || '{}');
-            if (accounts[currentUser]) {
-                accounts[currentUser].data = {
-                    totalRolls,
-                    inventory,
-                    craftedItems,
-                    equippedItem
-                };
-                localStorage.setItem('aura_forge_accounts', JSON.stringify(accounts));
-            }
-        }
-
-        function loadUserData(user) {
-            const accounts = JSON.parse(localStorage.getItem('aura_forge_accounts') || '{}');
-            if (accounts[user] && accounts[user].data) {
-                const data = accounts[user].data;
-                totalRolls = data.totalRolls || 0;
-                inventory = data.inventory || {};
-                craftedItems = data.craftedItems || {};
-                equippedItem = data.equippedItem || null;
-
-                totalRollsDisplay.textContent = `Rolls: ${totalRolls}`;
-                renderInventory();
-                renderCrafting();
-                updateUnlocks();
-            }
-        }
-
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-
-            if (tabName === 'inventory') {
-                document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
-                inventoryTab.classList.add('active');
-            } else {
-                document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
-                craftingTab.classList.add('active');
-                renderCrafting();
-            }
-        }
-
-        function getRandomAura() {
-            let luckMultiplier = 1.0;
-            const equippedObj = craftables.find(c => c.id === equippedItem);
-            if (equippedObj && equippedObj.buffType === 'luck') {
-                luckMultiplier = equippedObj.value;
-            }
-
-            const rand = Math.floor(Math.random() * 10000000000) + 1;
-            const sortedAuras = [...auras].sort((a, b) => b.chance - a.chance);
-            
-            for (let aura of sortedAuras) {
-                const threshold = (10000000000 / aura.chance) * luckMultiplier;
-                if (rand <= threshold) {
-                    return aura;
-                }
-            }
-            return auras[0];
-        }
-
-        function roll() {
-            if (isRolling) return;
-            isRolling = true;
-            rollBtn.disabled = true;
-
-            totalRolls++;
-            totalRollsDisplay.textContent = `Rolls: ${totalRolls}`;
-            updateUnlocks();
-
-            // FAST ROLL MECHANIC (STILE SOL'S RNG)
-            if (fastRollEnabled) {
-                const finalAura = getRandomAura();
-                auraRarity.textContent = finalAura.chance >= 10000 ? "RARE DISCOVERY!" : "DISCOVERED!";
-                auraDisplay.textContent = finalAura.name;
-                auraChance.textContent = `1 / ${finalAura.chance.toLocaleString()}`;
-                auraDisplay.className = "aura-name pop " + finalAura.class;
-
-                if (finalAura.chance >= 1000000) {
-                    playSound(900, 'sine', 0.2, 0.15);
-                } else {
-                    playSound(523, 'sine', 0.04, 0.05);
-                }
-
-                addToHistory(finalAura);
-                addToInventory(finalAura);
-                saveUserData();
-
-                isRolling = false;
-                if (!autoRolling) {
-                    rollBtn.disabled = false;
-                }
-                return;
-            }
-
-            // ANIMAZIONE ROLL STANDARD
-            let counter = 0;
-            let maxTicks = 12;
-            let intervalTime = 40;
-
-            const equippedObj = craftables.find(c => c.id === equippedItem);
-            if (equippedObj) {
-                if (equippedObj.buffType === 'speed') intervalTime = Math.floor(intervalTime * equippedObj.value);
-                if (equippedObj.buffType === 'ticks') maxTicks = equippedObj.value;
-            }
-
-            const rollInterval = setInterval(() => {
-                const randomAura = auras[Math.floor(Math.random() * auras.length)];
-                auraRarity.textContent = "FORGING...";
-                auraDisplay.textContent = randomAura.name;
-                auraChance.textContent = `1 / ${randomAura.chance.toLocaleString()}`;
-                auraDisplay.className = "aura-name " + randomAura.class;
-                
-                playSound(250 + (counter * 12), 'triangle', 0.02, 0.03);
-                counter++;
-
-                if (counter >= maxTicks) {
-                    clearInterval(rollInterval);
-
-                    const finalAura = getRandomAura();
-                    auraRarity.textContent = finalAura.chance >= 10000 ? "RARE DISCOVERY!" : "DISCOVERED!";
-                    auraDisplay.textContent = finalAura.name;
-                    auraChance.textContent = `1 / ${finalAura.chance.toLocaleString()}`;
-                    auraDisplay.className = "aura-name pop " + finalAura.class;
-
-                    if (finalAura.chance >= 1000000) {
-                        playSound(900, 'sine', 0.3, 0.15);
-                    } else {
-                        playSound(523, 'sine', 0.08, 0.08);
-                    }
-
-                    addToHistory(finalAura);
-                    addToInventory(finalAura);
-                    saveUserData();
-
-                    isRolling = false;
-                    if (!autoRolling) {
-                        rollBtn.disabled = false;
-                    }
-                }
-            }, intervalTime);
-        }
-
-        function addToHistory(aura) {
-            history.unshift(aura);
-            if (history.length > 8) history.pop();
-            renderHistory();
-        }
-
-        function renderHistory() {
-            historyList.innerHTML = '';
-            history.forEach(itemData => {
-                const item = document.createElement('div');
-                item.className = `history-item ${itemData.class}`;
-                item.textContent = `${itemData.name} (1/${itemData.chance.toLocaleString()})`;
-                historyList.appendChild(item);
-            });
-        }
-
-        function addToInventory(aura) {
-            if (inventory[aura.name]) {
-                inventory[aura.name].count++;
-            } else {
-                inventory[aura.name] = { count: 1, data: aura };
-            }
-            renderInventory();
-        }
-
-        function renderInventory() {
-            inventoryTab.innerHTML = '';
-            const sortedKeys = Object.keys(inventory).sort((a, b) => inventory[b].data.chance - inventory[a].data.chance);
-
-            if (sortedKeys.length === 0) {
-                inventoryTab.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color:var(--text-muted); padding:20px;">No auras discovered yet. Press Forge!</div>`;
-                return;
-            }
-
-            sortedKeys.forEach(key => {
-                const entry = inventory[key];
-                const card = document.createElement('div');
-                card.className = 'card-item';
-                card.innerHTML = `
-                    <div class="card-top">
-                        <span class="${entry.data.class}">${entry.data.name}</span>
-                        <span class="card-count">x${entry.count}</span>
-                    </div>
-                    <div class="card-sub">1 / ${entry.data.chance.toLocaleString()}</div>
-                `;
-                inventoryTab.appendChild(card);
-            });
-        }
-
-        function renderCrafting() {
-            craftingTab.innerHTML = '';
-            craftables.forEach(item => {
-                let canCraft = true;
-                for (let [auraName, reqCount] of Object.entries(item.cost)) {
-                    if (!inventory[auraName] || inventory[auraName].count < reqCount) {
-                        canCraft = false;
-                        break;
-                    }
-                }
-
-                const isCrafted = craftedItems[item.id];
-                const isEquipped = equippedItem === item.id;
-                let costText = Object.entries(item.cost).map(([name, count]) => `${count}x ${name}`).join(', ');
-
-                const card = document.createElement('div');
-                card.className = 'card-item';
-                card.innerHTML = `
-                    <div class="card-top">
-                        <span style="color: #c084fc;">${item.name}</span>
-                    </div>
-                    <div class="card-sub">${item.desc}</div>
-                    <div class="card-sub" style="margin-top:2px;">Cost: ${costText}</div>
-                    ${!isCrafted ? `<button class="craft-btn" ${!canCraft ? 'disabled' : ''} onclick="craftItem('${item.id}')">Forge</button>` : 
-                      `<button class="equip-btn ${isEquipped ? 'equipped' : ''}" onclick="toggleEquip('${item.id}')">${isEquipped ? 'Equipped' : 'Equip'}</button>`}
-                `;
-                craftingTab.appendChild(card);
-            });
-        }
-
-        function craftItem(itemId) {
-            const item = craftables.find(i => i.id === itemId);
-            if (!item) return;
-
-            for (let [auraName, reqCount] of Object.entries(item.cost)) {
-                inventory[auraName].count -= reqCount;
-                if (inventory[auraName].count <= 0) {
-                    delete inventory[auraName];
-                }
-            }
-
-            craftedItems[itemId] = true;
-            saveUserData();
-            renderInventory();
-            renderCrafting();
-        }
-
-        function toggleEquip(itemId) {
-            equippedItem = equippedItem === itemId ? null : itemId;
-            saveUserData();
-            renderCrafting();
-        }
-
-        autoBtn.addEventListener('click', () => {
-            if (totalRolls < 25) return;
-            autoRolling = !autoRolling;
-            if (autoRolling) {
-                autoBtn.classList.add('active');
-                autoBtn.textContent = "AUTO: ON";
-                rollBtn.disabled = true;
-                
-                autoInterval = setInterval(() => {
-                    if (!isRolling) roll();
-                }, fastRollEnabled ? 150 : 650);
-            } else {
-                autoBtn.classList.remove('active');
-                autoBtn.textContent = "AUTO: OFF";
-                clearInterval(autoInterval);
-                if (!isRolling) rollBtn.disabled = false;
-            }
-        });
-
-        fastBtn.addEventListener('click', () => {
-            if (totalRolls < 125) return;
-            fastRollEnabled = !fastRollEnabled;
-            if (fastRollEnabled) {
-                fastBtn.classList.add('active');
-                fastBtn.textContent = "FAST: ON";
-            } else {
-                fastBtn.classList.remove('active');
-                fastBtn.textContent = "FAST: OFF";
-            }
-
-            // Se l'autoroll è già attivo, aggiorna l'intervallo
-            if (autoRolling) {
-                clearInterval(autoInterval);
-                autoInterval = setInterval(() => {
-                    if (!isRolling) roll();
-                }, fastRollEnabled ? 150 : 650);
-            }
-        });
-
-        rollBtn.addEventListener('click', roll);
-
-        initUserSystem();
-        renderHistory();
-        renderInventory();
-    </script>
-</body>
-</html>
+"""Demo Python script with exactly 1000 lines."""
+def main():
+    total = 0
+    total += 1  # line block 1
+    total += 2  # line block 2
+    total += 3  # line block 3
+    total += 4  # line block 4
+    total += 5  # line block 5
+    total += 6  # line block 6
+    total += 7  # line block 7
+    total += 8  # line block 8
+    total += 9  # line block 9
+    total += 10  # line block 10
+    total += 11  # line block 11
+    total += 12  # line block 12
+    total += 13  # line block 13
+    total += 14  # line block 14
+    total += 15  # line block 15
+    total += 16  # line block 16
+    total += 17  # line block 17
+    total += 18  # line block 18
+    total += 19  # line block 19
+    total += 20  # line block 20
+    total += 21  # line block 21
+    total += 22  # line block 22
+    total += 23  # line block 23
+    total += 24  # line block 24
+    total += 25  # line block 25
+    total += 26  # line block 26
+    total += 27  # line block 27
+    total += 28  # line block 28
+    total += 29  # line block 29
+    total += 30  # line block 30
+    total += 31  # line block 31
+    total += 32  # line block 32
+    total += 33  # line block 33
+    total += 34  # line block 34
+    total += 35  # line block 35
+    total += 36  # line block 36
+    total += 37  # line block 37
+    total += 38  # line block 38
+    total += 39  # line block 39
+    total += 40  # line block 40
+    total += 41  # line block 41
+    total += 42  # line block 42
+    total += 43  # line block 43
+    total += 44  # line block 44
+    total += 45  # line block 45
+    total += 46  # line block 46
+    total += 47  # line block 47
+    total += 48  # line block 48
+    total += 49  # line block 49
+    total += 50  # line block 50
+    total += 51  # line block 51
+    total += 52  # line block 52
+    total += 53  # line block 53
+    total += 54  # line block 54
+    total += 55  # line block 55
+    total += 56  # line block 56
+    total += 57  # line block 57
+    total += 58  # line block 58
+    total += 59  # line block 59
+    total += 60  # line block 60
+    total += 61  # line block 61
+    total += 62  # line block 62
+    total += 63  # line block 63
+    total += 64  # line block 64
+    total += 65  # line block 65
+    total += 66  # line block 66
+    total += 67  # line block 67
+    total += 68  # line block 68
+    total += 69  # line block 69
+    total += 70  # line block 70
+    total += 71  # line block 71
+    total += 72  # line block 72
+    total += 73  # line block 73
+    total += 74  # line block 74
+    total += 75  # line block 75
+    total += 76  # line block 76
+    total += 77  # line block 77
+    total += 78  # line block 78
+    total += 79  # line block 79
+    total += 80  # line block 80
+    total += 81  # line block 81
+    total += 82  # line block 82
+    total += 83  # line block 83
+    total += 84  # line block 84
+    total += 85  # line block 85
+    total += 86  # line block 86
+    total += 87  # line block 87
+    total += 88  # line block 88
+    total += 89  # line block 89
+    total += 90  # line block 90
+    total += 91  # line block 91
+    total += 92  # line block 92
+    total += 93  # line block 93
+    total += 94  # line block 94
+    total += 95  # line block 95
+    total += 96  # line block 96
+    total += 97  # line block 97
+    total += 98  # line block 98
+    total += 99  # line block 99
+    total += 100  # line block 100
+    total += 101  # line block 101
+    total += 102  # line block 102
+    total += 103  # line block 103
+    total += 104  # line block 104
+    total += 105  # line block 105
+    total += 106  # line block 106
+    total += 107  # line block 107
+    total += 108  # line block 108
+    total += 109  # line block 109
+    total += 110  # line block 110
+    total += 111  # line block 111
+    total += 112  # line block 112
+    total += 113  # line block 113
+    total += 114  # line block 114
+    total += 115  # line block 115
+    total += 116  # line block 116
+    total += 117  # line block 117
+    total += 118  # line block 118
+    total += 119  # line block 119
+    total += 120  # line block 120
+    total += 121  # line block 121
+    total += 122  # line block 122
+    total += 123  # line block 123
+    total += 124  # line block 124
+    total += 125  # line block 125
+    total += 126  # line block 126
+    total += 127  # line block 127
+    total += 128  # line block 128
+    total += 129  # line block 129
+    total += 130  # line block 130
+    total += 131  # line block 131
+    total += 132  # line block 132
+    total += 133  # line block 133
+    total += 134  # line block 134
+    total += 135  # line block 135
+    total += 136  # line block 136
+    total += 137  # line block 137
+    total += 138  # line block 138
+    total += 139  # line block 139
+    total += 140  # line block 140
+    total += 141  # line block 141
+    total += 142  # line block 142
+    total += 143  # line block 143
+    total += 144  # line block 144
+    total += 145  # line block 145
+    total += 146  # line block 146
+    total += 147  # line block 147
+    total += 148  # line block 148
+    total += 149  # line block 149
+    total += 150  # line block 150
+    total += 151  # line block 151
+    total += 152  # line block 152
+    total += 153  # line block 153
+    total += 154  # line block 154
+    total += 155  # line block 155
+    total += 156  # line block 156
+    total += 157  # line block 157
+    total += 158  # line block 158
+    total += 159  # line block 159
+    total += 160  # line block 160
+    total += 161  # line block 161
+    total += 162  # line block 162
+    total += 163  # line block 163
+    total += 164  # line block 164
+    total += 165  # line block 165
+    total += 166  # line block 166
+    total += 167  # line block 167
+    total += 168  # line block 168
+    total += 169  # line block 169
+    total += 170  # line block 170
+    total += 171  # line block 171
+    total += 172  # line block 172
+    total += 173  # line block 173
+    total += 174  # line block 174
+    total += 175  # line block 175
+    total += 176  # line block 176
+    total += 177  # line block 177
+    total += 178  # line block 178
+    total += 179  # line block 179
+    total += 180  # line block 180
+    total += 181  # line block 181
+    total += 182  # line block 182
+    total += 183  # line block 183
+    total += 184  # line block 184
+    total += 185  # line block 185
+    total += 186  # line block 186
+    total += 187  # line block 187
+    total += 188  # line block 188
+    total += 189  # line block 189
+    total += 190  # line block 190
+    total += 191  # line block 191
+    total += 192  # line block 192
+    total += 193  # line block 193
+    total += 194  # line block 194
+    total += 195  # line block 195
+    total += 196  # line block 196
+    total += 197  # line block 197
+    total += 198  # line block 198
+    total += 199  # line block 199
+    total += 200  # line block 200
+    total += 201  # line block 201
+    total += 202  # line block 202
+    total += 203  # line block 203
+    total += 204  # line block 204
+    total += 205  # line block 205
+    total += 206  # line block 206
+    total += 207  # line block 207
+    total += 208  # line block 208
+    total += 209  # line block 209
+    total += 210  # line block 210
+    total += 211  # line block 211
+    total += 212  # line block 212
+    total += 213  # line block 213
+    total += 214  # line block 214
+    total += 215  # line block 215
+    total += 216  # line block 216
+    total += 217  # line block 217
+    total += 218  # line block 218
+    total += 219  # line block 219
+    total += 220  # line block 220
+    total += 221  # line block 221
+    total += 222  # line block 222
+    total += 223  # line block 223
+    total += 224  # line block 224
+    total += 225  # line block 225
+    total += 226  # line block 226
+    total += 227  # line block 227
+    total += 228  # line block 228
+    total += 229  # line block 229
+    total += 230  # line block 230
+    total += 231  # line block 231
+    total += 232  # line block 232
+    total += 233  # line block 233
+    total += 234  # line block 234
+    total += 235  # line block 235
+    total += 236  # line block 236
+    total += 237  # line block 237
+    total += 238  # line block 238
+    total += 239  # line block 239
+    total += 240  # line block 240
+    total += 241  # line block 241
+    total += 242  # line block 242
+    total += 243  # line block 243
+    total += 244  # line block 244
+    total += 245  # line block 245
+    total += 246  # line block 246
+    total += 247  # line block 247
+    total += 248  # line block 248
+    total += 249  # line block 249
+    total += 250  # line block 250
+    total += 251  # line block 251
+    total += 252  # line block 252
+    total += 253  # line block 253
+    total += 254  # line block 254
+    total += 255  # line block 255
+    total += 256  # line block 256
+    total += 257  # line block 257
+    total += 258  # line block 258
+    total += 259  # line block 259
+    total += 260  # line block 260
+    total += 261  # line block 261
+    total += 262  # line block 262
+    total += 263  # line block 263
+    total += 264  # line block 264
+    total += 265  # line block 265
+    total += 266  # line block 266
+    total += 267  # line block 267
+    total += 268  # line block 268
+    total += 269  # line block 269
+    total += 270  # line block 270
+    total += 271  # line block 271
+    total += 272  # line block 272
+    total += 273  # line block 273
+    total += 274  # line block 274
+    total += 275  # line block 275
+    total += 276  # line block 276
+    total += 277  # line block 277
+    total += 278  # line block 278
+    total += 279  # line block 279
+    total += 280  # line block 280
+    total += 281  # line block 281
+    total += 282  # line block 282
+    total += 283  # line block 283
+    total += 284  # line block 284
+    total += 285  # line block 285
+    total += 286  # line block 286
+    total += 287  # line block 287
+    total += 288  # line block 288
+    total += 289  # line block 289
+    total += 290  # line block 290
+    total += 291  # line block 291
+    total += 292  # line block 292
+    total += 293  # line block 293
+    total += 294  # line block 294
+    total += 295  # line block 295
+    total += 296  # line block 296
+    total += 297  # line block 297
+    total += 298  # line block 298
+    total += 299  # line block 299
+    total += 300  # line block 300
+    total += 301  # line block 301
+    total += 302  # line block 302
+    total += 303  # line block 303
+    total += 304  # line block 304
+    total += 305  # line block 305
+    total += 306  # line block 306
+    total += 307  # line block 307
+    total += 308  # line block 308
+    total += 309  # line block 309
+    total += 310  # line block 310
+    total += 311  # line block 311
+    total += 312  # line block 312
+    total += 313  # line block 313
+    total += 314  # line block 314
+    total += 315  # line block 315
+    total += 316  # line block 316
+    total += 317  # line block 317
+    total += 318  # line block 318
+    total += 319  # line block 319
+    total += 320  # line block 320
+    total += 321  # line block 321
+    total += 322  # line block 322
+    total += 323  # line block 323
+    total += 324  # line block 324
+    total += 325  # line block 325
+    total += 326  # line block 326
+    total += 327  # line block 327
+    total += 328  # line block 328
+    total += 329  # line block 329
+    total += 330  # line block 330
+    total += 331  # line block 331
+    total += 332  # line block 332
+    total += 333  # line block 333
+    total += 334  # line block 334
+    total += 335  # line block 335
+    total += 336  # line block 336
+    total += 337  # line block 337
+    total += 338  # line block 338
+    total += 339  # line block 339
+    total += 340  # line block 340
+    total += 341  # line block 341
+    total += 342  # line block 342
+    total += 343  # line block 343
+    total += 344  # line block 344
+    total += 345  # line block 345
+    total += 346  # line block 346
+    total += 347  # line block 347
+    total += 348  # line block 348
+    total += 349  # line block 349
+    total += 350  # line block 350
+    total += 351  # line block 351
+    total += 352  # line block 352
+    total += 353  # line block 353
+    total += 354  # line block 354
+    total += 355  # line block 355
+    total += 356  # line block 356
+    total += 357  # line block 357
+    total += 358  # line block 358
+    total += 359  # line block 359
+    total += 360  # line block 360
+    total += 361  # line block 361
+    total += 362  # line block 362
+    total += 363  # line block 363
+    total += 364  # line block 364
+    total += 365  # line block 365
+    total += 366  # line block 366
+    total += 367  # line block 367
+    total += 368  # line block 368
+    total += 369  # line block 369
+    total += 370  # line block 370
+    total += 371  # line block 371
+    total += 372  # line block 372
+    total += 373  # line block 373
+    total += 374  # line block 374
+    total += 375  # line block 375
+    total += 376  # line block 376
+    total += 377  # line block 377
+    total += 378  # line block 378
+    total += 379  # line block 379
+    total += 380  # line block 380
+    total += 381  # line block 381
+    total += 382  # line block 382
+    total += 383  # line block 383
+    total += 384  # line block 384
+    total += 385  # line block 385
+    total += 386  # line block 386
+    total += 387  # line block 387
+    total += 388  # line block 388
+    total += 389  # line block 389
+    total += 390  # line block 390
+    total += 391  # line block 391
+    total += 392  # line block 392
+    total += 393  # line block 393
+    total += 394  # line block 394
+    total += 395  # line block 395
+    total += 396  # line block 396
+    total += 397  # line block 397
+    total += 398  # line block 398
+    total += 399  # line block 399
+    total += 400  # line block 400
+    total += 401  # line block 401
+    total += 402  # line block 402
+    total += 403  # line block 403
+    total += 404  # line block 404
+    total += 405  # line block 405
+    total += 406  # line block 406
+    total += 407  # line block 407
+    total += 408  # line block 408
+    total += 409  # line block 409
+    total += 410  # line block 410
+    total += 411  # line block 411
+    total += 412  # line block 412
+    total += 413  # line block 413
+    total += 414  # line block 414
+    total += 415  # line block 415
+    total += 416  # line block 416
+    total += 417  # line block 417
+    total += 418  # line block 418
+    total += 419  # line block 419
+    total += 420  # line block 420
+    total += 421  # line block 421
+    total += 422  # line block 422
+    total += 423  # line block 423
+    total += 424  # line block 424
+    total += 425  # line block 425
+    total += 426  # line block 426
+    total += 427  # line block 427
+    total += 428  # line block 428
+    total += 429  # line block 429
+    total += 430  # line block 430
+    total += 431  # line block 431
+    total += 432  # line block 432
+    total += 433  # line block 433
+    total += 434  # line block 434
+    total += 435  # line block 435
+    total += 436  # line block 436
+    total += 437  # line block 437
+    total += 438  # line block 438
+    total += 439  # line block 439
+    total += 440  # line block 440
+    total += 441  # line block 441
+    total += 442  # line block 442
+    total += 443  # line block 443
+    total += 444  # line block 444
+    total += 445  # line block 445
+    total += 446  # line block 446
+    total += 447  # line block 447
+    total += 448  # line block 448
+    total += 449  # line block 449
+    total += 450  # line block 450
+    total += 451  # line block 451
+    total += 452  # line block 452
+    total += 453  # line block 453
+    total += 454  # line block 454
+    total += 455  # line block 455
+    total += 456  # line block 456
+    total += 457  # line block 457
+    total += 458  # line block 458
+    total += 459  # line block 459
+    total += 460  # line block 460
+    total += 461  # line block 461
+    total += 462  # line block 462
+    total += 463  # line block 463
+    total += 464  # line block 464
+    total += 465  # line block 465
+    total += 466  # line block 466
+    total += 467  # line block 467
+    total += 468  # line block 468
+    total += 469  # line block 469
+    total += 470  # line block 470
+    total += 471  # line block 471
+    total += 472  # line block 472
+    total += 473  # line block 473
+    total += 474  # line block 474
+    total += 475  # line block 475
+    total += 476  # line block 476
+    total += 477  # line block 477
+    total += 478  # line block 478
+    total += 479  # line block 479
+    total += 480  # line block 480
+    total += 481  # line block 481
+    total += 482  # line block 482
+    total += 483  # line block 483
+    total += 484  # line block 484
+    total += 485  # line block 485
+    total += 486  # line block 486
+    total += 487  # line block 487
+    total += 488  # line block 488
+    total += 489  # line block 489
+    total += 490  # line block 490
+    total += 491  # line block 491
+    total += 492  # line block 492
+    total += 493  # line block 493
+    total += 494  # line block 494
+    total += 495  # line block 495
+    total += 496  # line block 496
+    total += 497  # line block 497
+    total += 498  # line block 498
+    total += 499  # line block 499
+    total += 500  # line block 500
+    total += 501  # line block 501
+    total += 502  # line block 502
+    total += 503  # line block 503
+    total += 504  # line block 504
+    total += 505  # line block 505
+    total += 506  # line block 506
+    total += 507  # line block 507
+    total += 508  # line block 508
+    total += 509  # line block 509
+    total += 510  # line block 510
+    total += 511  # line block 511
+    total += 512  # line block 512
+    total += 513  # line block 513
+    total += 514  # line block 514
+    total += 515  # line block 515
+    total += 516  # line block 516
+    total += 517  # line block 517
+    total += 518  # line block 518
+    total += 519  # line block 519
+    total += 520  # line block 520
+    total += 521  # line block 521
+    total += 522  # line block 522
+    total += 523  # line block 523
+    total += 524  # line block 524
+    total += 525  # line block 525
+    total += 526  # line block 526
+    total += 527  # line block 527
+    total += 528  # line block 528
+    total += 529  # line block 529
+    total += 530  # line block 530
+    total += 531  # line block 531
+    total += 532  # line block 532
+    total += 533  # line block 533
+    total += 534  # line block 534
+    total += 535  # line block 535
+    total += 536  # line block 536
+    total += 537  # line block 537
+    total += 538  # line block 538
+    total += 539  # line block 539
+    total += 540  # line block 540
+    total += 541  # line block 541
+    total += 542  # line block 542
+    total += 543  # line block 543
+    total += 544  # line block 544
+    total += 545  # line block 545
+    total += 546  # line block 546
+    total += 547  # line block 547
+    total += 548  # line block 548
+    total += 549  # line block 549
+    total += 550  # line block 550
+    total += 551  # line block 551
+    total += 552  # line block 552
+    total += 553  # line block 553
+    total += 554  # line block 554
+    total += 555  # line block 555
+    total += 556  # line block 556
+    total += 557  # line block 557
+    total += 558  # line block 558
+    total += 559  # line block 559
+    total += 560  # line block 560
+    total += 561  # line block 561
+    total += 562  # line block 562
+    total += 563  # line block 563
+    total += 564  # line block 564
+    total += 565  # line block 565
+    total += 566  # line block 566
+    total += 567  # line block 567
+    total += 568  # line block 568
+    total += 569  # line block 569
+    total += 570  # line block 570
+    total += 571  # line block 571
+    total += 572  # line block 572
+    total += 573  # line block 573
+    total += 574  # line block 574
+    total += 575  # line block 575
+    total += 576  # line block 576
+    total += 577  # line block 577
+    total += 578  # line block 578
+    total += 579  # line block 579
+    total += 580  # line block 580
+    total += 581  # line block 581
+    total += 582  # line block 582
+    total += 583  # line block 583
+    total += 584  # line block 584
+    total += 585  # line block 585
+    total += 586  # line block 586
+    total += 587  # line block 587
+    total += 588  # line block 588
+    total += 589  # line block 589
+    total += 590  # line block 590
+    total += 591  # line block 591
+    total += 592  # line block 592
+    total += 593  # line block 593
+    total += 594  # line block 594
+    total += 595  # line block 595
+    total += 596  # line block 596
+    total += 597  # line block 597
+    total += 598  # line block 598
+    total += 599  # line block 599
+    total += 600  # line block 600
+    total += 601  # line block 601
+    total += 602  # line block 602
+    total += 603  # line block 603
+    total += 604  # line block 604
+    total += 605  # line block 605
+    total += 606  # line block 606
+    total += 607  # line block 607
+    total += 608  # line block 608
+    total += 609  # line block 609
+    total += 610  # line block 610
+    total += 611  # line block 611
+    total += 612  # line block 612
+    total += 613  # line block 613
+    total += 614  # line block 614
+    total += 615  # line block 615
+    total += 616  # line block 616
+    total += 617  # line block 617
+    total += 618  # line block 618
+    total += 619  # line block 619
+    total += 620  # line block 620
+    total += 621  # line block 621
+    total += 622  # line block 622
+    total += 623  # line block 623
+    total += 624  # line block 624
+    total += 625  # line block 625
+    total += 626  # line block 626
+    total += 627  # line block 627
+    total += 628  # line block 628
+    total += 629  # line block 629
+    total += 630  # line block 630
+    total += 631  # line block 631
+    total += 632  # line block 632
+    total += 633  # line block 633
+    total += 634  # line block 634
+    total += 635  # line block 635
+    total += 636  # line block 636
+    total += 637  # line block 637
+    total += 638  # line block 638
+    total += 639  # line block 639
+    total += 640  # line block 640
+    total += 641  # line block 641
+    total += 642  # line block 642
+    total += 643  # line block 643
+    total += 644  # line block 644
+    total += 645  # line block 645
+    total += 646  # line block 646
+    total += 647  # line block 647
+    total += 648  # line block 648
+    total += 649  # line block 649
+    total += 650  # line block 650
+    total += 651  # line block 651
+    total += 652  # line block 652
+    total += 653  # line block 653
+    total += 654  # line block 654
+    total += 655  # line block 655
+    total += 656  # line block 656
+    total += 657  # line block 657
+    total += 658  # line block 658
+    total += 659  # line block 659
+    total += 660  # line block 660
+    total += 661  # line block 661
+    total += 662  # line block 662
+    total += 663  # line block 663
+    total += 664  # line block 664
+    total += 665  # line block 665
+    total += 666  # line block 666
+    total += 667  # line block 667
+    total += 668  # line block 668
+    total += 669  # line block 669
+    total += 670  # line block 670
+    total += 671  # line block 671
+    total += 672  # line block 672
+    total += 673  # line block 673
+    total += 674  # line block 674
+    total += 675  # line block 675
+    total += 676  # line block 676
+    total += 677  # line block 677
+    total += 678  # line block 678
+    total += 679  # line block 679
+    total += 680  # line block 680
+    total += 681  # line block 681
+    total += 682  # line block 682
+    total += 683  # line block 683
+    total += 684  # line block 684
+    total += 685  # line block 685
+    total += 686  # line block 686
+    total += 687  # line block 687
+    total += 688  # line block 688
+    total += 689  # line block 689
+    total += 690  # line block 690
+    total += 691  # line block 691
+    total += 692  # line block 692
+    total += 693  # line block 693
+    total += 694  # line block 694
+    total += 695  # line block 695
+    total += 696  # line block 696
+    total += 697  # line block 697
+    total += 698  # line block 698
+    total += 699  # line block 699
+    total += 700  # line block 700
+    total += 701  # line block 701
+    total += 702  # line block 702
+    total += 703  # line block 703
+    total += 704  # line block 704
+    total += 705  # line block 705
+    total += 706  # line block 706
+    total += 707  # line block 707
+    total += 708  # line block 708
+    total += 709  # line block 709
+    total += 710  # line block 710
+    total += 711  # line block 711
+    total += 712  # line block 712
+    total += 713  # line block 713
+    total += 714  # line block 714
+    total += 715  # line block 715
+    total += 716  # line block 716
+    total += 717  # line block 717
+    total += 718  # line block 718
+    total += 719  # line block 719
+    total += 720  # line block 720
+    total += 721  # line block 721
+    total += 722  # line block 722
+    total += 723  # line block 723
+    total += 724  # line block 724
+    total += 725  # line block 725
+    total += 726  # line block 726
+    total += 727  # line block 727
+    total += 728  # line block 728
+    total += 729  # line block 729
+    total += 730  # line block 730
+    total += 731  # line block 731
+    total += 732  # line block 732
+    total += 733  # line block 733
+    total += 734  # line block 734
+    total += 735  # line block 735
+    total += 736  # line block 736
+    total += 737  # line block 737
+    total += 738  # line block 738
+    total += 739  # line block 739
+    total += 740  # line block 740
+    total += 741  # line block 741
+    total += 742  # line block 742
+    total += 743  # line block 743
+    total += 744  # line block 744
+    total += 745  # line block 745
+    total += 746  # line block 746
+    total += 747  # line block 747
+    total += 748  # line block 748
+    total += 749  # line block 749
+    total += 750  # line block 750
+    total += 751  # line block 751
+    total += 752  # line block 752
+    total += 753  # line block 753
+    total += 754  # line block 754
+    total += 755  # line block 755
+    total += 756  # line block 756
+    total += 757  # line block 757
+    total += 758  # line block 758
+    total += 759  # line block 759
+    total += 760  # line block 760
+    total += 761  # line block 761
+    total += 762  # line block 762
+    total += 763  # line block 763
+    total += 764  # line block 764
+    total += 765  # line block 765
+    total += 766  # line block 766
+    total += 767  # line block 767
+    total += 768  # line block 768
+    total += 769  # line block 769
+    total += 770  # line block 770
+    total += 771  # line block 771
+    total += 772  # line block 772
+    total += 773  # line block 773
+    total += 774  # line block 774
+    total += 775  # line block 775
+    total += 776  # line block 776
+    total += 777  # line block 777
+    total += 778  # line block 778
+    total += 779  # line block 779
+    total += 780  # line block 780
+    total += 781  # line block 781
+    total += 782  # line block 782
+    total += 783  # line block 783
+    total += 784  # line block 784
+    total += 785  # line block 785
+    total += 786  # line block 786
+    total += 787  # line block 787
+    total += 788  # line block 788
+    total += 789  # line block 789
+    total += 790  # line block 790
+    total += 791  # line block 791
+    total += 792  # line block 792
+    total += 793  # line block 793
+    total += 794  # line block 794
+    total += 795  # line block 795
+    total += 796  # line block 796
+    total += 797  # line block 797
+    total += 798  # line block 798
+    total += 799  # line block 799
+    total += 800  # line block 800
+    total += 801  # line block 801
+    total += 802  # line block 802
+    total += 803  # line block 803
+    total += 804  # line block 804
+    total += 805  # line block 805
+    total += 806  # line block 806
+    total += 807  # line block 807
+    total += 808  # line block 808
+    total += 809  # line block 809
+    total += 810  # line block 810
+    total += 811  # line block 811
+    total += 812  # line block 812
+    total += 813  # line block 813
+    total += 814  # line block 814
+    total += 815  # line block 815
+    total += 816  # line block 816
+    total += 817  # line block 817
+    total += 818  # line block 818
+    total += 819  # line block 819
+    total += 820  # line block 820
+    total += 821  # line block 821
+    total += 822  # line block 822
+    total += 823  # line block 823
+    total += 824  # line block 824
+    total += 825  # line block 825
+    total += 826  # line block 826
+    total += 827  # line block 827
+    total += 828  # line block 828
+    total += 829  # line block 829
+    total += 830  # line block 830
+    total += 831  # line block 831
+    total += 832  # line block 832
+    total += 833  # line block 833
+    total += 834  # line block 834
+    total += 835  # line block 835
+    total += 836  # line block 836
+    total += 837  # line block 837
+    total += 838  # line block 838
+    total += 839  # line block 839
+    total += 840  # line block 840
+    total += 841  # line block 841
+    total += 842  # line block 842
+    total += 843  # line block 843
+    total += 844  # line block 844
+    total += 845  # line block 845
+    total += 846  # line block 846
+    total += 847  # line block 847
+    total += 848  # line block 848
+    total += 849  # line block 849
+    total += 850  # line block 850
+    total += 851  # line block 851
+    total += 852  # line block 852
+    total += 853  # line block 853
+    total += 854  # line block 854
+    total += 855  # line block 855
+    total += 856  # line block 856
+    total += 857  # line block 857
+    total += 858  # line block 858
+    total += 859  # line block 859
+    total += 860  # line block 860
+    total += 861  # line block 861
+    total += 862  # line block 862
+    total += 863  # line block 863
+    total += 864  # line block 864
+    total += 865  # line block 865
+    total += 866  # line block 866
+    total += 867  # line block 867
+    total += 868  # line block 868
+    total += 869  # line block 869
+    total += 870  # line block 870
+    total += 871  # line block 871
+    total += 872  # line block 872
+    total += 873  # line block 873
+    total += 874  # line block 874
+    total += 875  # line block 875
+    total += 876  # line block 876
+    total += 877  # line block 877
+    total += 878  # line block 878
+    total += 879  # line block 879
+    total += 880  # line block 880
+    total += 881  # line block 881
+    total += 882  # line block 882
+    total += 883  # line block 883
+    total += 884  # line block 884
+    total += 885  # line block 885
+    total += 886  # line block 886
+    total += 887  # line block 887
+    total += 888  # line block 888
+    total += 889  # line block 889
+    total += 890  # line block 890
+    total += 891  # line block 891
+    total += 892  # line block 892
+    total += 893  # line block 893
+    total += 894  # line block 894
+    total += 895  # line block 895
+    total += 896  # line block 896
+    total += 897  # line block 897
+    total += 898  # line block 898
+    total += 899  # line block 899
+    total += 900  # line block 900
+    total += 901  # line block 901
+    total += 902  # line block 902
+    total += 903  # line block 903
+    total += 904  # line block 904
+    total += 905  # line block 905
+    total += 906  # line block 906
+    total += 907  # line block 907
+    total += 908  # line block 908
+    total += 909  # line block 909
+    total += 910  # line block 910
+    total += 911  # line block 911
+    total += 912  # line block 912
+    total += 913  # line block 913
+    total += 914  # line block 914
+    total += 915  # line block 915
+    total += 916  # line block 916
+    total += 917  # line block 917
+    total += 918  # line block 918
+    total += 919  # line block 919
+    total += 920  # line block 920
+    total += 921  # line block 921
+    total += 922  # line block 922
+    total += 923  # line block 923
+    total += 924  # line block 924
+    total += 925  # line block 925
+    total += 926  # line block 926
+    total += 927  # line block 927
+    total += 928  # line block 928
+    total += 929  # line block 929
+    total += 930  # line block 930
+    total += 931  # line block 931
+    total += 932  # line block 932
+    total += 933  # line block 933
+    total += 934  # line block 934
+    total += 935  # line block 935
+    total += 936  # line block 936
+    total += 937  # line block 937
+    total += 938  # line block 938
+    total += 939  # line block 939
+    total += 940  # line block 940
+    total += 941  # line block 941
+    total += 942  # line block 942
+    total += 943  # line block 943
+    total += 944  # line block 944
+    total += 945  # line block 945
+    total += 946  # line block 946
+    total += 947  # line block 947
+    total += 948  # line block 948
+    total += 949  # line block 949
+    total += 950  # line block 950
+    total += 951  # line block 951
+    total += 952  # line block 952
+    total += 953  # line block 953
+    total += 954  # line block 954
+    total += 955  # line block 955
+    total += 956  # line block 956
+    total += 957  # line block 957
+    total += 958  # line block 958
+    total += 959  # line block 959
+    total += 960  # line block 960
+    total += 961  # line block 961
+    total += 962  # line block 962
+    total += 963  # line block 963
+    total += 964  # line block 964
+    total += 965  # line block 965
+    total += 966  # line block 966
+    total += 967  # line block 967
+    total += 968  # line block 968
+    total += 969  # line block 969
+    total += 970  # line block 970
+    total += 971  # line block 971
+    total += 972  # line block 972
+    total += 973  # line block 973
+    total += 974  # line block 974
+    total += 975  # line block 975
+    total += 976  # line block 976
+    total += 977  # line block 977
+    total += 978  # line block 978
+    total += 979  # line block 979
+    total += 980  # line block 980
+    total += 981  # line block 981
+    total += 982  # line block 982
+    total += 983  # line block 983
+    total += 984  # line block 984
+    total += 985  # line block 985
+    total += 986  # line block 986
+    total += 987  # line block 987
+    total += 988  # line block 988
+    total += 989  # line block 989
+    total += 990  # line block 990
+    total += 991  # line block 991
+    total += 992  # line block 992
+    total += 993  # line block 993
+    total += 994  # line block 994
+    print("Total:", total)
+
+if __name__ == "__main__":

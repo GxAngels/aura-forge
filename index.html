@@ -417,8 +417,8 @@
                 </div>
                 
                 <div class="tabs">
-                    <button class="tab-btn active" onclick="switchTab('inventory')">Inventory</button>
-                    <button class="tab-btn" onclick="switchTab('crafting')">Crafting</button>
+                    <button class="tab-btn active" id="tabInvBtn">Inventory</button>
+                    <button class="tab-btn" id="tabCraftBtn">Crafting</button>
                 </div>
 
                 <div id="inventoryTab" class="tab-content active grid-list"></div>
@@ -438,8 +438,8 @@
             <div class="auth-error" id="authError"></div>
             <input type="text" id="usernameInput" placeholder="Username">
             <input type="password" id="passwordInput" placeholder="Password">
-            <button class="action-btn" onclick="submitAuth()">Confirm</button>
-            <button class="action-btn" onclick="closeAuthModal()" style="background: transparent;">Cancel</button>
+            <button class="action-btn" id="confirmAuthBtn">Confirm</button>
+            <button class="action-btn" id="cancelAuthBtn" style="background: transparent;">Cancel</button>
         </div>
     </div>
 
@@ -519,4 +519,477 @@
             { id: "catalyst_11", name: "Nirvana Lotus", desc: "+1600% Luck (17x)", cost: { "Nirvana": 1, "Big Bang": 1 }, buffType: "luck", value: 17.00 },
             { id: "catalyst_12", name: "Spire of Infinity", desc: "+2500% Luck (26x)", cost: { "Infinity Spire": 1, "Eternal Void": 1 }, buffType: "luck", value: 26.00 },
             { id: "catalyst_13", name: "Multiverse Matrix", desc: "+4000% Luck (41x)", cost: { "Multiverse Core": 1, "Event Horizon": 1 }, buffType: "luck", value: 41.00 },
-            { id: "catalyst_14", name: "Omni Engine", desc: "+10000% Ultimate
+            { id: "catalyst_14", name: "Omni Engine", desc: "+10000% Ultimate Luck (101x)", cost: { "Omnipotence": 1, "Primordial Chaos": 1 }, buffType: "luck", value: 101.00 }
+        ];
+
+        let currentUser = null;
+        let totalRolls = 0;
+        let isRolling = false;
+        let autoRolling = false;
+        let fastRollEnabled = false;
+        let autoInterval = null;
+        let history = [];
+        let inventory = {}; 
+        let craftedItems = {};
+        let equippedItem = null;
+        let currentAuthMode = 'login';
+
+        let globalAudioCtx = null;
+
+        const rollBtn = document.getElementById('rollBtn');
+        const autoBtn = document.getElementById('autoBtn');
+        const fastBtn = document.getElementById('fastBtn');
+        const auraDisplay = document.getElementById('auraDisplay');
+        const auraRarity = document.getElementById('auraRarity');
+        const auraChance = document.getElementById('auraChance');
+        const totalRollsDisplay = document.getElementById('totalRolls');
+        const historyList = document.getElementById('historyList');
+        const inventoryTab = document.getElementById('inventoryTab');
+        const craftingTab = document.getElementById('craftingTab');
+        const authError = document.getElementById('authError');
+
+        function playSound(freq, type = 'sine', duration = 0.05, vol = 0.08) {
+            try {
+                if (!globalAudioCtx) {
+                    globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (globalAudioCtx.state === 'suspended') {
+                    globalAudioCtx.resume();
+                }
+                const oscillator = globalAudioCtx.createOscillator();
+                const gainNode = globalAudioCtx.createGain();
+
+                oscillator.type = type;
+                oscillator.frequency.setValueAtTime(freq, globalAudioCtx.currentTime);
+                gainNode.gain.setValueAtTime(vol, globalAudioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, globalAudioCtx.currentTime + duration);
+
+                oscillator.connect(gainNode);
+                gainNode.connect(globalAudioCtx.destination);
+
+                oscillator.start();
+                oscillator.stop(globalAudioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function updateUnlocks() {
+            if (totalRolls >= 25) {
+                autoBtn.disabled = false;
+                autoBtn.title = "Toggle Auto Roll";
+                if (!autoRolling) autoBtn.textContent = "AUTO: OFF";
+            } else {
+                autoBtn.disabled = true;
+                autoBtn.textContent = `AUTO (${25 - totalRolls} left)`;
+            }
+
+            if (totalRolls >= 125) {
+                fastBtn.disabled = false;
+                fastBtn.title = "Toggle Fast Roll";
+                if (!fastRollEnabled) fastBtn.textContent = "FAST: OFF";
+            } else {
+                fastBtn.disabled = true;
+                fastBtn.textContent = `FAST (${125 - totalRolls} left)`;
+            }
+        }
+
+        function initUserSystem() {
+            const activeUser = localStorage.getItem('aura_forge_user');
+            if (activeUser) {
+                currentUser = activeUser;
+                loadUserData(currentUser);
+            }
+            renderAuthUI();
+            updateUnlocks();
+        }
+
+        function renderAuthUI() {
+            const authSection = document.getElementById('authSection');
+            if (currentUser) {
+                authSection.innerHTML = `
+                    <span class="user-tag">👤 ${currentUser}</span>
+                    <button class="auth-btn" id="logoutBtn">LOGOUT</button>
+                `;
+                document.getElementById('logoutBtn').onclick = logout;
+            } else {
+                authSection.innerHTML = `
+                    <button class="auth-btn" id="loginBtn">LOGIN</button>
+                    <button class="auth-btn" id="registerBtn">REGISTER</button>
+                `;
+                document.getElementById('loginBtn').onclick = () => openAuthModal('login');
+                document.getElementById('registerBtn').onclick = () => openAuthModal('register');
+            }
+        }
+
+        function openAuthModal(mode) {
+            currentAuthMode = mode;
+            document.getElementById('modalTitle').textContent = mode === 'login' ? 'Login Account' : 'Register Account';
+            document.getElementById('usernameInput').value = '';
+            document.getElementById('passwordInput').value = '';
+            authError.style.display = 'none';
+            document.getElementById('authModal').classList.add('active');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.remove('active');
+        }
+
+        function showAuthError(msg) {
+            authError.textContent = msg;
+            authError.style.display = 'block';
+        }
+
+        function submitAuth() {
+            const user = document.getElementById('usernameInput').value.trim();
+            const pass = document.getElementById('passwordInput').value.trim();
+
+            if (!user || !pass) {
+                showAuthError("⚠️ Please fill in all fields!");
+                return;
+            }
+
+            const accounts = JSON.parse(localStorage.getItem('aura_forge_accounts') || '{}');
+
+            if (currentAuthMode === 'register') {
+                if (accounts[user]) {
+                    showAuthError("⚠️️ Username already exists! Choose another.");
+                    return;
+                }
+                accounts[user] = { 
+                    password: pass, 
+                    data: { totalRolls: 0, inventory: {}, craftedItems: {}, equippedItem: null } 
+                };
+                localStorage.setItem('aura_forge_accounts', JSON.stringify(accounts));
+                currentUser = user;
+            } else {
+                if (!accounts[user]) {
+                    showAuthError("⚠️ Account does not exist!");
+                    return;
+                }
+                if (accounts[user].password !== pass) {
+                    showAuthError("⚠️ Incorrect password!");
+                    return;
+                }
+                currentUser = user;
+            }
+
+            localStorage.setItem('aura_forge_user', currentUser);
+            loadUserData(currentUser);
+            renderAuthUI();
+            closeAuthModal();
+        }
+
+        function logout() {
+            saveUserData();
+            currentUser = null;
+            localStorage.removeItem('aura_forge_user');
+            totalRolls = 0;
+            inventory = {};
+            craftedItems = {};
+            equippedItem = null;
+            history = [];
+            
+            totalRollsDisplay.textContent = `Rolls: 0`;
+            renderHistory();
+            renderInventory();
+            renderCrafting();
+            renderAuthUI();
+            updateUnlocks();
+        }
+
+        function saveUserData() {
+            if (!currentUser) return;
+            const accounts = JSON.parse(localStorage.getItem('aura_forge_accounts') || '{}');
+            if (accounts[currentUser]) {
+                accounts[currentUser].data = {
+                    totalRolls,
+                    inventory,
+                    craftedItems,
+                    equippedItem
+                };
+                localStorage.setItem('aura_forge_accounts', JSON.stringify(accounts));
+            }
+        }
+
+        function loadUserData(user) {
+            const accounts = JSON.parse(localStorage.getItem('aura_forge_accounts') || '{}');
+            if (accounts[user] && accounts[user].data) {
+                const data = accounts[user].data;
+                totalRolls = data.totalRolls || 0;
+                inventory = data.inventory || {};
+                craftedItems = data.craftedItems || {};
+                equippedItem = data.equippedItem || null;
+
+                totalRollsDisplay.textContent = `Rolls: ${totalRolls}`;
+                renderInventory();
+                renderCrafting();
+                updateUnlocks();
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            if (tabName === 'inventory') {
+                document.getElementById('tabInvBtn').classList.add('active');
+                inventoryTab.classList.add('active');
+            } else {
+                document.getElementById('tabCraftBtn').classList.add('active');
+                craftingTab.classList.add('active');
+                renderCrafting();
+            }
+        }
+
+        function getRandomAura() {
+            let luckMultiplier = 1.0;
+            const equippedObj = craftables.find(c => c.id === equippedItem);
+            if (equippedObj && equippedObj.buffType === 'luck') {
+                luckMultiplier = equippedObj.value;
+            }
+
+            const rand = Math.floor(Math.random() * 10000000000) + 1;
+            const sortedAuras = [...auras].sort((a, b) => b.chance - a.chance);
+            
+            for (let aura of sortedAuras) {
+                const threshold = (10000000000 / aura.chance) * luckMultiplier;
+                if (rand <= threshold) {
+                    return aura;
+                }
+            }
+            return auras[0];
+        }
+
+        function roll() {
+            if (isRolling) return;
+            isRolling = true;
+            rollBtn.disabled = true;
+
+            totalRolls++;
+            totalRollsDisplay.textContent = `Rolls: ${totalRolls}`;
+            updateUnlocks();
+
+            if (fastRollEnabled) {
+                const finalAura = getRandomAura();
+                auraRarity.textContent = finalAura.chance >= 10000 ? "RARE DISCOVERY!" : "DISCOVERED!";
+                auraDisplay.textContent = finalAura.name;
+                auraChance.textContent = `1 / ${finalAura.chance.toLocaleString()}`;
+                auraDisplay.className = "aura-name pop " + finalAura.class;
+
+                if (finalAura.chance >= 1000000) {
+                    playSound(900, 'sine', 0.2, 0.15);
+                } else {
+                    playSound(523, 'sine', 0.04, 0.05);
+                }
+
+                addToHistory(finalAura);
+                addToInventory(finalAura);
+                saveUserData();
+
+                isRolling = false;
+                if (!autoRolling) {
+                    rollBtn.disabled = false;
+                }
+                return;
+            }
+
+            let counter = 0;
+            let maxTicks = 12;
+            let intervalTime = 40;
+
+            const equippedObj = craftables.find(c => c.id === equippedItem);
+            if (equippedObj) {
+                if (equippedObj.buffType === 'speed') intervalTime = Math.floor(intervalTime * equippedObj.value);
+                if (equippedObj.buffType === 'ticks') maxTicks = equippedObj.value;
+            }
+
+            const rollInterval = setInterval(() => {
+                const randomAura = auras[Math.floor(Math.random() * auras.length)];
+                auraRarity.textContent = "FORGING...";
+                auraDisplay.textContent = randomAura.name;
+                auraChance.textContent = `1 / ${randomAura.chance.toLocaleString()}`;
+                auraDisplay.className = "aura-name " + randomAura.class;
+                
+                playSound(250 + (counter * 12), 'triangle', 0.02, 0.03);
+                counter++;
+
+                if (counter >= maxTicks) {
+                    clearInterval(rollInterval);
+
+                    const finalAura = getRandomAura();
+                    auraRarity.textContent = finalAura.chance >= 10000 ? "RARE DISCOVERY!" : "DISCOVERED!";
+                    auraDisplay.textContent = finalAura.name;
+                    auraChance.textContent = `1 / ${finalAura.chance.toLocaleString()}`;
+                    auraDisplay.className = "aura-name pop " + finalAura.class;
+
+                    if (finalAura.chance >= 1000000) {
+                        playSound(900, 'sine', 0.3, 0.15);
+                    } else {
+                        playSound(523, 'sine', 0.08, 0.08);
+                    }
+
+                    addToHistory(finalAura);
+                    addToInventory(finalAura);
+                    saveUserData();
+
+                    isRolling = false;
+                    if (!autoRolling) {
+                        rollBtn.disabled = false;
+                    }
+                }
+            }, intervalTime);
+        }
+
+        function addToHistory(aura) {
+            history.unshift(aura);
+            if (history.length > 8) history.pop();
+            renderHistory();
+        }
+
+        function renderHistory() {
+            historyList.innerHTML = '';
+            history.forEach(itemData => {
+                const item = document.createElement('div');
+                item.className = `history-item ${itemData.class}`;
+                item.textContent = `${itemData.name} (1/${itemData.chance.toLocaleString()})`;
+                historyList.appendChild(item);
+            });
+        }
+
+        function addToInventory(aura) {
+            if (inventory[aura.name]) {
+                inventory[aura.name].count++;
+            } else {
+                inventory[aura.name] = { count: 1, data: aura };
+            }
+            renderInventory();
+        }
+
+        function renderInventory() {
+            inventoryTab.innerHTML = '';
+            const sortedKeys = Object.keys(inventory).sort((a, b) => inventory[b].data.chance - inventory[a].data.chance);
+
+            if (sortedKeys.length === 0) {
+                inventoryTab.innerHTML = `<div style="grid-column: 1/-1; text-align:center; color:var(--text-muted); padding:20px;">No auras discovered yet. Press Forge!</div>`;
+                return;
+            }
+
+            sortedKeys.forEach(key => {
+                const entry = inventory[key];
+                const card = document.createElement('div');
+                card.className = 'card-item';
+                card.innerHTML = `
+                    <div class="card-top">
+                        <span class="${entry.data.class}">${entry.data.name}</span>
+                        <span class="card-count">x${entry.count}</span>
+                    </div>
+                    <div class="card-sub">1 / ${entry.data.chance.toLocaleString()}</div>
+                `;
+                inventoryTab.appendChild(card);
+            });
+        }
+
+        function renderCrafting() {
+            craftingTab.innerHTML = '';
+            craftables.forEach(item => {
+                let canCraft = true;
+                for (let [auraName, reqCount] of Object.entries(item.cost)) {
+                    if (!inventory[auraName] || inventory[auraName].count < reqCount) {
+                        canCraft = false;
+                        break;
+                    }
+                }
+
+                const isCrafted = craftedItems[item.id];
+                const isEquipped = equippedItem === item.id;
+                let costText = Object.entries(item.cost).map(([name, count]) => `${count}x ${name}`).join(', ');
+
+                const card = document.createElement('div');
+                card.className = 'card-item';
+                card.innerHTML = `
+                    <div class="card-top">
+                        <span style="color: #c084fc;">${item.name}</span>
+                    </div>
+                    <div class="card-sub">${item.desc}</div>
+                    <div class="card-sub" style="margin-top:2px;">Cost: ${costText}</div>
+                    ${!isCrafted ? `<button class="craft-btn" ${!canCraft ? 'disabled' : ''} onclick="craftItem('${item.id}')">Forge</button>` : 
+                      `<button class="equip-btn ${isEquipped ? 'equipped' : ''}" onclick="toggleEquip('${item.id}')">${isEquipped ? 'Equipped' : 'Equip'}</button>`}
+                `;
+                craftingTab.appendChild(card);
+            });
+        }
+
+        function craftItem(itemId) {
+            const item = craftables.find(i => i.id === itemId);
+            if (!item) return;
+
+            for (let [auraName, reqCount] of Object.entries(item.cost)) {
+                inventory[auraName].count -= reqCount;
+                if (inventory[auraName].count <= 0) {
+                    delete inventory[auraName];
+                }
+            }
+
+            craftedItems[itemId] = true;
+            saveUserData();
+            renderInventory();
+            renderCrafting();
+        }
+
+        function toggleEquip(itemId) {
+            equippedItem = equippedItem === itemId ? null : itemId;
+            saveUserData();
+            renderCrafting();
+        }
+
+        // EVENT LISTENERS
+        document.getElementById('tabInvBtn').addEventListener('click', () => switchTab('inventory'));
+        document.getElementById('tabCraftBtn').addEventListener('click', () => switchTab('crafting'));
+        document.getElementById('confirmAuthBtn').addEventListener('click', submitAuth);
+        document.getElementById('cancelAuthBtn').addEventListener('click', closeAuthModal);
+
+        autoBtn.addEventListener('click', () => {
+            if (totalRolls < 25) return;
+            autoRolling = !autoRolling;
+            if (autoRolling) {
+                autoBtn.classList.add('active');
+                autoBtn.textContent = "AUTO: ON";
+                rollBtn.disabled = true;
+                
+                autoInterval = setInterval(() => {
+                    if (!isRolling) roll();
+                }, fastRollEnabled ? 150 : 650);
+            } else {
+                autoBtn.classList.remove('active');
+                autoBtn.textContent = "AUTO: OFF";
+                clearInterval(autoInterval);
+                if (!isRolling) rollBtn.disabled = false;
+            }
+        });
+
+        fastBtn.addEventListener('click', () => {
+            if (totalRolls < 125) return;
+            fastRollEnabled = !fastRollEnabled;
+            if (fastRollEnabled) {
+                fastBtn.classList.add('active');
+                fastBtn.textContent = "FAST: ON";
+            } else {
+                fastBtn.classList.remove('active');
+                fastBtn.textContent = "FAST: OFF";
+            }
+
+            if (autoRolling) {
+                clearInterval(autoInterval);
+                autoInterval = setInterval(() => {
+                    if (!isRolling) roll();
+                }, fastRollEnabled ? 150 : 650);
+            }
+        });
+
+        rollBtn.addEventListener('click', roll);
+
+        initUserSystem();
+        renderHistory();
+        renderInventory();
+    </script>
+</body>
+</html>

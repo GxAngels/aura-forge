@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Forge</title>
+    <style>
+        :root {
+            --bg-color: #0b0d17;
+            --panel-bg: rgba(22, 27, 46, 0.8);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-image: radial-gradient(circle at 50% 20%, rgba(139, 92, 246, 0.15), transparent 60%);
+        }
+
+        header {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: var(--panel-bg);
+            padding: 15px 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            background: linear-gradient(45deg, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .auth-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .auth-btn, .action-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .auth-btn:hover, .action-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .forge-section {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            position: relative;
+        }
+
+        .display-rarity {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .aura-name {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+
+        .aura-chance {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .roll-btn {
+            background: linear-gradient(135deg, #7c3aed, #c084fc);
+            border: none;
+            color: white;
+            padding: 14px 32px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+
+        .roll-btn:active {
+            transform: scale(0.96);
+        }
+
+        .roll-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .auto-btn, .fast-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 14px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .auto-btn.active {
+            background: #ef4444;
+            border-color: #f87171;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+        }
+
+        .fast-btn.active {
+            background: #eab308;
+            border-color: #fde047;
+            color: #000;
+            box-shadow: 0 0 10px rgba(234, 179, 8, 0.4);
+        }
+
+        .auto-btn:disabled, .fast-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            border-color: transparent;
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+        }
+
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            font-size: 0.85rem;
+            padding: 6px 10px;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .grid-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        .card-item {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+        }
+
+        .card-count {
+            color: var(--accent);
+        }
+
+        .card-sub {
+            color: var(--text-muted);
+            font-size: 0.7rem;
+            margin-top: 4px;
+        }
+
+        .craft-btn, .equip-btn {
+            margin-top: 6px;
+            width: 100%;
+            padding: 4px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: bold;
+            background: var(--accent);
+            color: white;
+        }
+
+        .craft-btn:disabled {
+            background: #4b5563;
+            cursor: not-allowed;
+        }
+
+        .equip-btn.equipped {
+            background: #10b981;
+        }
+
+        /* RARITY COLORS */
+        .rarity-common { color: #9ca3af; }
+        .rarity-uncommon { color: #22c55e; }
+        .rarity-rare { color: #3b82f6; }
+        .rarity-epic { color: #a855f7; }
+        .rarity-mythic { color: #ec4899; }
+        .rarity-cosmic { color: #06b6d4; text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
+        .rarity-transcendent { color: #f59e0b; text-shadow: 0 0 12px rgba(245, 158, 11, 0.7); }
+
+        /* MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: #161b2e;
+            padding: 25px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .modal-content input {
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+        }
+
+        .auth-error {
+            color: #ef4444;
+            font-size: 0.8rem;
+            text-align: center;
+            display: none;
+            font-weight: bold;
+        }
+
+        .user-tag {
+            font-size: 0.9rem;
+            color: #a78bfa;
+            font-weight: bold;
+        }
+
+        .pop {
+            animation: popAnim 0.15s ease-out;
+        }
+
+        @keyframes popAnim {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>AURA FORGE</h1>
+        <div class="auth-container" id="authSection"></div>
+    </header>
+
+    <div class="main-container">
+        <div class="forge-section">
+            <div class="display-rarity" id="auraRarity">READY TO FORGE</div>
+            <div class="aura-name rarity-common" id="auraDisplay">None</div>
+            <div class="aura-chance" id="auraChance">1 / 1</div>
+
+            <div class="controls">
+                <button class="roll-btn" id="rollBtn">FORGE</button>
+                <button class="auto-btn" id="autoBtn" disabled title="Unlocks at 25 rolls">AUTO (25 Rolls)</button>
+                <button class="fast-btn" id="fastBtn" disabled title="Unlocks at 125 rolls">FAST ROLL (125 Rolls)</button>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="panel">
+                <div class="panel-title">
+                    <span>Collection</span>
+                    <span id="totalRolls" style="color: var(--text-muted); font-size: 0.85rem;">Rolls: 0</span>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('inventory')">Inventory</button>
+                    <button class="tab-btn" onclick="switchTab('crafting')">Crafting</button>
+                </div>
+
+                <div id="inventoryTab" class="tab-content active grid-list"></div>
+                <div id="craftingTab" class="tab-content grid-list"></div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-title">History</div>
+                <div class="history-list" id="historyList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="authModal">
+        <div class="modal-content">
+            <h3 id="modalTitle" style="text-align: center;">Login</h3>
+            <div class="auth-error" id="authError"></div>
+            <input type="text" id="usernameInput" placeholder="Username">
+            <input type="password" id="passwordInput" placeholder="Password">
+            <button class="action-btn" onclick="submitAuth()">Confirm</button>
+            <button class="action-btn" onclick="closeAuthModal()" style="background: transparent;">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        const auras = [
+            { name: "Spark", chance: 2, class: "rarity-common" },
+            { name: "Mist", chance: 4, class: "rarity-common" },
+            { name: "Dewdrop", chance: 8, class: "rarity-uncommon" },
+            { name: "Breeze", chance: 15, class: "rarity-uncommon" },
+            { name: "Verdant", chance: 20, class: "rarity-uncommon" },
+            { name: "Ember", chance: 30, class: "rarity-uncommon" },
+            { name: "Glowworm", chance: 50, class: "rarity-rare" },
+            { name: "Glacier", chance: 150, class: "rarity-rare" },
+            { name: "Zephyr", chance: 250, class: "rarity-rare" },
+            { name: "Quartz", chance: 400, class: "rarity-epic" },
+            { name: "Thunderstorm", chance: 650, class: "rarity-epic" },
+            { name: "Aether", chance: 1000, class: "rarity-epic" },
+            { name: "Volt", chance: 1500, class: "rarity-epic" },
+            { name: "Phantom", chance: 2200, class: "rarity-epic" },
+            { name: "Solaris", chance: 3500, class: "rarity-mythic" },
+            { name: "Lunaris", chance: 3500, class: "rarity-mythic" },
+            { name: "Abyssal Pulse", chance: 5000, class: "rarity-mythic" },
+            { name: "Astral Weave", chance: 8000, class: "rarity-mythic" },
+            { name: "Vortex", chance: 12000, class: "rarity-mythic" },
+            { name: "Supernova", chance: 20000, class: "rarity-mythic" },
+            { name: "Nebula", chance: 35000, class: "rarity-cosmic" },
+            { name: "Eclipse", chance: 50000, class: "rarity-cosmic" },
+            { name: "Chronos", chance: 75000, class: "rarity-cosmic" },
+            { name: "Void Prism", chance: 120000, class: "rarity-cosmic" },
+            { name: "Singularity", chance: 200000, class: "rarity-cosmic" },
+            { name: "Celestial Crest", chance: 350000, class: "rarity-cosmic" },
+            { name: "Hyperdrive", chance: 500000, class: "rarity-cosmic" },
+            { name: "Starlight Monarch", chance: 850000, class: "rarity-cosmic" },
+            { name: "Supercluster", chance: 1200000, class: "rarity-cosmic" },
+            { name: "Valhalla", chance: 2000000, class: "rarity-transcendent" },
+            { name: "Entropy", chance: 3500000, class: "rarity-transcendent" },
+            { name: "Zenith", chance: 5000000, class: "rarity-transcendent" },
+            { name: "Dimension Tear", chance: 8000000, class: "rarity-transcendent" },
+            { name: "Ragnarok", chance: 12000000, class: "rarity-transcendent" },
+            { name: "Cosmic String", chance: 20000000, class: "rarity-transcendent" },
+            { name: "Dark Matter", chance: 35000000, class: "rarity-transcendent" },
+            { name: "Genesis", chance: 50000000, class: "rarity-transcendent" },
+            { name: "Nirvana", chance: 80000000, class: "rarity-transcendent" },
+            { name: "Alpha & Omega", chance: 120000000, class: "rarity-transcendent" },
+            { name: "Big Bang", chance: 200000000, class: "rarity-transcendent" },
+            { name: "Infinity Spire", chance: 350000000, class: "rarity-transcendent" },
+            { name: "Eternal Void", chance: 500000000, class: "rarity-transcendent" },
+            { name: "Event Horizon", chance: 750000000, class: "rarity-transcendent" },
+            { name: "Multiverse Core", chance: 1000000000, class: "rarity-transcendent" },
+            { name: "Time Weaver", chance: 1800000000, class: "rarity-transcendent" },
+            { name: "Astraea", chance: 2500000000, class: "rarity-transcendent" },
+            { name: "Primordial Chaos", chance: 4000000000, class: "rarity-transcendent" },
+            { name: "Cosmic Architect", chance: 6000000000, class: "rarity-transcendent" },
+            { name: "Oblivion Engine", chance: 8000000000, class: "rarity-transcendent" },
+            { name: "Omnipotence", chance: 10000000000, class: "rarity-transcendent" }
+        ];
+
+        const craftables = [
+            { id: "dew_pendant", name: "Dewdrop Pendant", desc: "+5% Luck", cost: { "Dewdrop": 3, "Spark": 5 }, buffType: "luck", value: 1.05 },
+            { id: "breeze_ring", name: "Breeze Ring", desc: "+10% Luck", cost: { "Dewdrop": 2, "Breeze": 3 }, buffType: "luck", value: 1.10 },
+            { id: "catalyst_1", name: "Amber Catalyst", desc: "+15% Luck", cost: { "Glowworm": 2, "Verdant": 2 }, buffType: "luck", value: 1.15 },
+            { id: "catalyst_2", name: "Glacier Shard", desc: "+25% Luck", cost: { "Glacier": 2, "Zephyr": 1 }, buffType: "luck", value: 1.25 },
+            { id: "speed_1", name: "Gale Ring", desc: "Forge Speed +15%", cost: { "Breeze": 5, "Quartz": 1 }, buffType: "speed", value: 0.85 },
+            { id: "speed_2", name: "Lightning Conduit", desc: "Forge Speed +30%", cost: { "Thunderstorm": 2, "Volt": 1 }, buffType: "speed", value: 0.70 },
+            { id: "catalyst_3", name: "Aether Prism", desc: "+45% Luck", cost: { "Aether": 2, "Phantom": 1 }, buffType: "luck", value: 1.45 },
+            { id: "ticks_1", name: "Vortex Compass", desc: "Faster Forge Animation", cost: { "Vortex": 1, "Abyssal Pulse": 2 }, buffType: "ticks", value: 8 },
+            { id: "catalyst_4", name: "Solar-Lunar Orb", desc: "+70% Luck", cost: { "Solaris": 1, "Lunaris": 1 }, buffType: "luck", value: 1.70 },
+            { id: "speed_3", name: "Hyperdrive Core", desc: "Forge Speed +50%", cost: { "Hyperdrive": 1, "Supernova": 2 }, buffType: "speed", value: 0.50 },
+            { id: "catalyst_5", name: "Nebula Heart", desc: "+100% Luck (2x)", cost: { "Nebula": 1, "Eclipse": 1 }, buffType: "luck", value: 2.00 },
+            { id: "ticks_2", name: "Chronos Hourglass", desc: "Instant Forge Animation", cost: { "Chronos": 1, "Singularity": 1 }, buffType: "ticks", value: 4 },
+            { id: "catalyst_6", name: "Void Crown", desc: "+150% Luck (2.5x)", cost: { "Void Prism": 1, "Celestial Crest": 2 }, buffType: "luck", value: 2.50 },
+            { id: "catalyst_7", name: "Starlight Scepter", desc: "+250% Luck (3.5x)", cost: { "Starlight Monarch": 1, "Supercluster": 1 }, buffType: "luck", value: 3.50 },
+            { id: "speed_4", name: "Warp Accelerator", desc: "Ultrastat Auto-Forge", cost: { "Dimension Tear": 1, "Entropy": 1 }, buffType: "speed", value: 0.25 },
+            { id: "catalyst_8", name: "Valhalla Seal", desc: "+400% Luck (5x)", cost: { "Valhalla": 1, "Zenith": 1 }, buffType: "luck", value: 5.00 },
+            { id: "catalyst_9", name: "Entropy Eye", desc: "+650% Luck (7.5x)", cost: { "Ragnarok": 1, "Dark Matter": 1 }, buffType: "luck", value: 7.50 },
+            { id: "catalyst_10", name: "Genesis Core", desc: "+1000% Luck (11x)", cost: { "Genesis": 1, "Cosmic String": 2 }, buffType: "luck", value: 11.00 },
+            { id: "catalyst_11", name: "Nirvana Lotus", desc: "+1600% Luck (17x)", cost: { "Nirvana": 1, "Big Bang": 1 }, buffType: "luck", value: 17.00 },
+            { id: "catalyst_12", name: "Spire of Infinity", desc: "+2500% Luck (26x)", cost: { "Infinity Spire": 1, "Eternal Void": 1 }, buffType: "luck", value: 26.00 },
+            { id: "catalyst_13", name: "Multiverse Matrix", desc: "+4000% Luck (41x)", cost: { "Multiverse Core": 1, "Event Horizon": 1 }, buffType: "luck", value: 41.00 },
+            { id: "catalyst_14", name: "Omni Engine", desc: "+10000% Ultimate
